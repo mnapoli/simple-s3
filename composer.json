@@ -1,25 +1,34 @@
 {
-    "name": "mnapoli/myproject",
-    "description": "Give it a nice description!",
-    "keywords": [],
+    "name": "mnapoli/simple-s3",
+    "description": "Simple and dependency-free S3 client",
+    "keywords": ["s3", "aws"],
     "license": "MIT",
     "type": "library",
     "autoload": {
         "psr-4": {
-            "MyProject\\": "src/"
+            "Mnapoli\\SimpleS3\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "MyProject\\Test\\": "tests/"
+            "Mnapoli\\SimpleS3\\Test\\": "tests/"
         }
     },
     "require": {
-        "php": ">=7.4"
+        "php": ">=7.4",
+        "ext-curl": "*",
+        "ext-dom": "*",
+        "ext-iconv": "*",
+        "ext-zlib": "*"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.0",
-        "mnapoli/hard-mode": "^0.3.0",
-        "phpstan/phpstan": "^0.12.0"
+        "phpunit/phpunit": "^9",
+        "mnapoli/hard-mode": "^0.3",
+        "phpstan/phpstan": "^1"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }
