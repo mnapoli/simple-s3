@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "s3rver": "^3.7.1"
+  },
+  "scripts": {
+    "s3-server": "s3rver"
+  }
+}
