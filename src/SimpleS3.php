@@ -11,7 +11,6 @@ use RuntimeException;
 class SimpleS3
 {
     private const TIMEOUT_IN_SECONDS = 2;
-    public static $auto_retry_delays = [0, 1, 2]; // set to empty array to disable auto-retrying
 
     private string $accessKeyId;
     private string $secretKey;
@@ -29,7 +28,7 @@ class SimpleS3
         );
     }
 
-    public function __construct(string $accessKeyId, string $secretKey, ?string $sessionToken, string $region, string $endpoint = null)
+    public function __construct(string $accessKeyId, string $secretKey, ?string $sessionToken, string $region, ?string $endpoint = null)
     {
         $this->accessKeyId = $accessKeyId;
         $this->secretKey = $secretKey;
@@ -86,7 +85,7 @@ class SimpleS3
      * @return Response
      * @throws RuntimeException If the request failed.
      */
-    private function s3Request(string $httpVerb, string $bucket, string $key, array $headers, string $body = '', $throwOn404 = true): array
+    private function s3Request(string $httpVerb, string $bucket, string $key, array $headers, string $body = '', bool $throwOn404 = true): array
     {
         $uriPath = str_replace('%2F', '/', rawurlencode($key));
         $uriPath = '/' . ltrim($uriPath, '/');
@@ -137,6 +136,10 @@ class SimpleS3
         }
 
         $ch = curl_init($url);
+        if (!$ch) {
+            throw $this->httpError(null, 'could not create a CURL request for an unknown reason');
+        }
+
         $responseHeadersAsString = '';
         curl_setopt_array($ch, [
             CURLOPT_CUSTOMREQUEST => $httpVerb,
@@ -165,7 +168,7 @@ class SimpleS3
             $responseHeadersAsString,
             ICONV_MIME_DECODE_CONTINUE_ON_ERROR,
             'UTF-8',
-        );
+        ) ?: [];
 
         return [$status, $responseBody, $responseHeaders];
     }
