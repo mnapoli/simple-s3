@@ -30,6 +30,11 @@ jobs:
                     php-version: ${{ matrix.php }}
                     tools: composer:v2
                     coverage: none
+            -   name: Setup Node
+                uses: actions/setup-node@v3
+                with:
+                    node-version: 16
+                    cache-dependency-path: tests/package-lock.json
             -   name: Cache Composer dependencies
                 uses: actions/cache@v2
                 with:
@@ -38,6 +43,8 @@ jobs:
                     restore-keys: php-${{ matrix.php }}-composer-locked-
             -   name: Install PHP dependencies
                 run: composer update ${{ matrix.dependency-version }} --prefer-dist --no-interaction --no-progress --no-suggest
+            -   name: Install NPM dependencies
+                run: cd tests && npm ci
             -   name: PHPUnit
                 run: vendor/bin/phpunit
 
