@@ -108,7 +108,7 @@ class SimpleS3Test extends TestCase
 
     private static function startFakeS3Server(): void
     {
-        $fs = new Filesystem();
+        $fs = new Filesystem;
         $fs->remove(__DIR__ . '/fixtures/my-bucket');
 
         $command = ['npm', 'run', 's3-server', '--', '--directory', __DIR__ . '/fixtures', '--configure-bucket', 'my-bucket'];

@@ -109,7 +109,7 @@ class SimpleS3
         if ($shouldThrow404 || $status < 200 || ($status >= 400 && $status !== 404)) {
             $errorMessage = '';
             if ($body) {
-                $dom = new DOMDocument();
+                $dom = new DOMDocument;
                 if (! $dom->loadXML($body)) {
                     throw new RuntimeException('Could not parse the AWS S3 response: ' . $body);
                 }
@@ -136,7 +136,7 @@ class SimpleS3
         }
 
         $ch = curl_init($url);
-        if (!$ch) {
+        if (! $ch) {
             throw $this->httpError(null, 'could not create a CURL request for an unknown reason');
         }
 
@@ -199,7 +199,7 @@ class SimpleS3
         $headers = $this->sortHeadersByName($headers);
 
         // https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
-        $headerNamesAsString = implode(";", array_map('strtolower', array_keys($headers)));
+        $headerNamesAsString = implode(';', array_map('strtolower', array_keys($headers)));
         $headerString = '';
         foreach ($headers as $key => $value) {
             $headerString .= strtolower($key) . ':' . trim($value) . "\n";
@@ -208,9 +208,15 @@ class SimpleS3
         $canonicalRequest = "$httpVerb\n$uriPath\n$queryString\n$headerString\n$headerNamesAsString\n$bodySignature";
 
         $stringToSign = "AWS4-HMAC-SHA256\n$timeAsText\n$scope\n" . hash('sha256', $canonicalRequest);
-        $signingKey = hash_hmac('sha256', 'aws4_request',
-            hash_hmac('sha256', 's3',
-                hash_hmac('sha256', $this->region,
+        $signingKey = hash_hmac(
+            'sha256',
+            'aws4_request',
+            hash_hmac(
+                'sha256',
+                's3',
+                hash_hmac(
+                    'sha256',
+                    $this->region,
                     hash_hmac('sha256', $dateAsText, 'AWS4' . $this->secretKey, true),
                     true),
                 true),
