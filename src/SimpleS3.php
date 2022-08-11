@@ -170,7 +170,7 @@ class SimpleS3
             'UTF-8',
         ) ?: [];
 
-        return [$status, $responseBody, $responseHeaders];
+        return [$status, (string) $responseBody, $responseHeaders];
     }
 
     /**
