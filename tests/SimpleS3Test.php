@@ -57,7 +57,6 @@ class SimpleS3Test extends TestCase
         $this->assertEquals('"327b6f07435811239bc47e1544353273"', $headers['ETag']);
     }
 
-
     /**
      * @depends test put
      */

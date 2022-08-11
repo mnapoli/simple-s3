@@ -218,9 +218,11 @@ class SimpleS3
                     'sha256',
                     $this->region,
                     hash_hmac('sha256', $dateAsText, 'AWS4' . $this->secretKey, true),
-                    true),
-                true),
-            true
+                    true,
+                ),
+                true,
+            ),
+            true,
         );
         $signature = hash_hmac('sha256', $stringToSign, $signingKey);
 
@@ -232,6 +234,7 @@ class SimpleS3
     private function getHostname(string $bucketName): string
     {
         if ($this->region === 'us-east-1') return "$bucketName.s3.amazonaws.com";
+
         return "$bucketName.s3-{$this->region}.amazonaws.com";
     }
 

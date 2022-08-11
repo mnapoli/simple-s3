@@ -4,6 +4,12 @@
 
     <file>src</file>
     <file>tests</file>
+    <exclude-pattern>tests/node_modules/*</exclude-pattern>
 
     <rule ref="HardMode"/>
+
+    <!-- Allow inline if -->
+    <rule ref="Generic.ControlStructures.InlineControlStructure">
+        <severity>0</severity>
+    </rule>
 </ruleset>
