@@ -155,6 +155,7 @@ class SimpleS3
                 return strlen($data);
             },
         ]);
+        /** @var string|false $responseBody */
         $responseBody = curl_exec($ch);
         $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
@@ -170,7 +171,7 @@ class SimpleS3
             'UTF-8',
         ) ?: [];
 
-        return [$status, (string) $responseBody, $responseHeaders];
+        return [$status, $responseBody, $responseHeaders];
     }
 
     /**
