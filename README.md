@@ -4,11 +4,20 @@ Simple, single-file and dependency-free AWS S3 client.
 
 In some scenarios we want the **simplest and lightest S3 client** possible. For example in [Bref](https://bref.sh)'s runtime core we don't want to embed the full AWS SDK.
 
+If you need more, you can use the official AWS SDK for PHP, or this great alternative: [Async AWS](https://async-aws.com).
+
 ## Installation
+
+This package can be installed via Composer:
 
 ```sh
 composer require mnapoli/simple-s3
 ```
+
+However, this package offers a guarantee that **all logic will be self-contained** into the `src/SimpleS3.php` file. If you want to take advantage of that, you can either:
+
+- download the `SimpleS3.php` file and copy it into your application,
+- or install the package via Composer and copy `vendor/mnapoli/simple-s3/src/SimpleS3.php` in your application (best because Composer will let you constrain the major version).
 
 ## Usage
 
