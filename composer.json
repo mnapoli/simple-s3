@@ -1,6 +1,6 @@
 {
     "name": "mnapoli/simple-s3",
-    "description": "Simple and dependency-free S3 client",
+    "description": "Simple, single-file and dependency-free AWS S3 client",
     "keywords": ["s3", "aws"],
     "license": "MIT",
     "type": "library",

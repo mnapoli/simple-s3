@@ -36,6 +36,8 @@ $s3 = new SimpleS3($accessKeyId, $secretKey, $sessionToken, $region);
 
 Any error (400, 403, 404, 500…) will be thrown as an exception. Sometimes a 404 is expected and we don't want a generic exception: look at the `getIfExists()` example below.
 
+Note: only a subset of the AWS S3 API is supported by this package (CRUD files in a bucket basically).
+
 ## Examples
 
 `$s3->get()` will throw an exception if the key doesn't exist. You can use `getIfExists()` to get an empty `$body` instead:
