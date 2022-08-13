@@ -12,12 +12,6 @@ class SimpleS3
 {
     private const TIMEOUT_IN_SECONDS = 2;
 
-    private string $accessKeyId;
-    private string $secretKey;
-    private ?string $sessionToken;
-    private string $region;
-    private ?string $endpoint;
-
     public static function fromEnvironmentVariables(string $region): self
     {
         return new self(
@@ -28,13 +22,13 @@ class SimpleS3
         );
     }
 
-    public function __construct(string $accessKeyId, string $secretKey, ?string $sessionToken, string $region, ?string $endpoint = null)
-    {
-        $this->accessKeyId = $accessKeyId;
-        $this->secretKey = $secretKey;
-        $this->sessionToken = $sessionToken;
-        $this->region = $region;
-        $this->endpoint = $endpoint;
+    public function __construct(
+        private string $accessKeyId,
+        private string $secretKey,
+        private ?string $sessionToken,
+        private string $region,
+        private ?string $endpoint = null
+    ) {
     }
 
     /**
