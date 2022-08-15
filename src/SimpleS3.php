@@ -107,7 +107,7 @@ class SimpleS3
                 if (! $dom->loadXML($body)) {
                     throw new RuntimeException('Could not parse the AWS S3 response: ' . $body);
                 }
-                if ($dom->childNodes->item(0)->nodeName === 'Error') {
+                if ($dom->childNodes->item(0)?->nodeName === 'Error') {
                     $errorMessage = $dom->childNodes->item(0)->textContent;
                 }
             }
