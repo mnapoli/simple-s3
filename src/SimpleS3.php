@@ -227,10 +227,11 @@ class SimpleS3
 
     private function getHostname(string $bucketName): string
     {
-        return match ($this->region) {
-            'us-east-1' => "$bucketName.s3.amazonaws.com",
-            default => "$bucketName.s3-{$this->region}.amazonaws.com",
-        };
+        if ($this->region === 'us-east-1') {
+            return "$bucketName.s3.amazonaws.com";
+        }
+
+        return "$bucketName.s3-{$this->region}.amazonaws.com";
     }
 
     private function httpError(?int $status, ?string $message): RuntimeException
