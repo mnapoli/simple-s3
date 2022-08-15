@@ -32,7 +32,7 @@ class SimpleS3
     }
 
     /**
-     * @param array<string, string> $headers
+     * @param Array<string, string> $headers
      * @return Response
      * @throws RuntimeException If the request failed.
      */
@@ -45,7 +45,7 @@ class SimpleS3
      * `get()` will throw if the object doesn't exist.
      * This method will return a 404 status and not throw instead.
      *
-     * @param array<string, string> $headers
+     * @param Array<string, string> $headers
      * @return Response
      * @throws RuntimeException If the request failed.
      */
@@ -55,7 +55,7 @@ class SimpleS3
     }
 
     /**
-     * @param array<string, string> $headers
+     * @param Array<string, string> $headers
      * @return Response
      * @throws RuntimeException If the request failed.
      */
@@ -65,7 +65,7 @@ class SimpleS3
     }
 
     /**
-     * @param array<string, string> $headers
+     * @param Array<string, string> $headers
      * @return Response
      * @throws RuntimeException If the request failed.
      */
@@ -75,7 +75,7 @@ class SimpleS3
     }
 
     /**
-     * @param array<string, string> $headers
+     * @param Array<string, string> $headers
      * @return Response
      * @throws RuntimeException If the request failed.
      */
@@ -95,7 +95,7 @@ class SimpleS3
         } else {
             $url = "https://$hostname";
         }
-        $url = "$url$uriPath?$queryString";
+        $url = "$url{$uriPath}?$queryString";
 
         [$status, $body, $responseHeaders] = $this->curlRequest($httpVerb, $url, $headers, $body);
 
@@ -118,7 +118,7 @@ class SimpleS3
     }
 
     /**
-     * @param array<string, string> $headers
+     * @param Array<string, string> $headers
      * @return Response
      * @throws RuntimeException If the request failed.
      */
@@ -180,7 +180,7 @@ class SimpleS3
     ): array {
         $dateAsText = gmdate('Ymd');
         $timeAsText = gmdate('Ymd\THis\Z');
-        $scope = "$dateAsText/$this->region/s3/aws4_request";
+        $scope = "$dateAsText/{$this->region}/s3/aws4_request";
         $bodySignature = hash('sha256', $body);
 
         $headers['x-amz-date'] = $timeAsText;
@@ -220,7 +220,7 @@ class SimpleS3
         );
         $signature = hash_hmac('sha256', $stringToSign, $signingKey);
 
-        $headers['authorization'] = "AWS4-HMAC-SHA256 Credential=$this->accessKeyId/$scope,SignedHeaders=$headerNamesAsString,Signature=$signature";
+        $headers['authorization'] = "AWS4-HMAC-SHA256 Credential={$this->accessKeyId}/$scope,SignedHeaders=$headerNamesAsString,Signature=$signature";
 
         return $headers;
     }
@@ -229,7 +229,7 @@ class SimpleS3
     {
         return match ($this->region) {
             'us-east-1' => "$bucketName.s3.amazonaws.com",
-            default => "$bucketName.s3-$this->region.amazonaws.com",
+            default => "$bucketName.s3-{$this->region}.amazonaws.com",
         };
     }
 
@@ -239,8 +239,8 @@ class SimpleS3
     }
 
     /**
-     * @param array<string, string> $headers
-     * @return array<string, string>
+     * @param Array<string, string> $headers
+     * @return Array<string, string>
      */
     private function sortHeadersByName(array $headers): array
     {
