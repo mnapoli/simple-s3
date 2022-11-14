@@ -10,13 +10,12 @@ use RuntimeException;
  */
 class SimpleS3
 {
-    private const TIMEOUT_IN_SECONDS = 2;
-
     private string $accessKeyId;
     private string $secretKey;
     private ?string $sessionToken;
     private string $region;
     private ?string $endpoint;
+    private int $timeoutInSeconds = 5;
 
     public static function fromEnvironmentVariables(string $region): self
     {
@@ -35,6 +34,12 @@ class SimpleS3
         $this->sessionToken = $sessionToken;
         $this->region = $region;
         $this->endpoint = $endpoint;
+    }
+
+    public function setTimeout(int $timeoutInSeconds): SimpleS3
+    {
+        $this->timeoutInSeconds = $timeoutInSeconds;
+        return $this;
     }
 
     /**
@@ -145,7 +150,7 @@ class SimpleS3
             CURLOPT_CUSTOMREQUEST => $httpVerb,
             CURLOPT_HTTPHEADER => $curlHeaders,
             CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_TIMEOUT => self::TIMEOUT_IN_SECONDS,
+            CURLOPT_TIMEOUT => $this->timeoutInSeconds,
             CURLOPT_POSTFIELDS => $body,
             // So that `curl_exec` returns the response body
             CURLOPT_RETURNTRANSFER => true,
