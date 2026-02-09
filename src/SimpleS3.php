@@ -70,7 +70,10 @@ class SimpleS3
      * @return Response
      * @throws RuntimeException If the request failed.
      */
-    public function put(string $bucket, string $key, string $content, array $headers = []): array
+    /**
+     * @param string|resource $content
+     */
+    public function put(string $bucket, string $key, $content, array $headers = []): array
     {
         return $this->s3Request('PUT', $bucket, $key, $headers, $content);
     }
@@ -87,10 +90,11 @@ class SimpleS3
 
     /**
      * @param Array<string, string> $headers
+     * @param string|resource $body
      * @return Response
      * @throws RuntimeException If the request failed.
      */
-    private function s3Request(string $httpVerb, string $bucket, string $key, array $headers, string $body = '', bool $throwOn404 = true): array
+    private function s3Request(string $httpVerb, string $bucket, string $key, array $headers, $body = '', bool $throwOn404 = true): array
     {
         $uriPath = str_replace('%2F', '/', rawurlencode($key));
         $uriPath = '/' . ltrim($uriPath, '/');
@@ -98,8 +102,18 @@ class SimpleS3
         $hostname = $this->getHostname($bucket);
         $headers['host'] = $hostname;
 
+        $isStream = \is_resource($body);
+        $bodyHash = $isStream ? 'UNSIGNED-PAYLOAD' : hash('sha256', $body);
+
+        if ($isStream && !isset($headers['content-length'])) {
+            $stat = fstat($body);
+            if (is_array($stat) && isset($stat['size']) && $stat['size'] >= 0) {
+                $headers['content-length'] = (string) $stat['size'];
+            }
+        }
+
         // Sign the request via headers
-        $headers = $this->signRequest($httpVerb, $uriPath, $queryString, $headers, $body);
+        $headers = $this->signRequest($httpVerb, $uriPath, $queryString, $headers, $bodyHash);
 
         if ($this->endpoint) {
             $url = $this->endpoint;
@@ -108,7 +122,7 @@ class SimpleS3
         }
         $url = "$url{$uriPath}?$queryString";
 
-        [$status, $body, $responseHeaders] = $this->curlRequest($httpVerb, $url, $headers, $body);
+        [$status, $body, $responseHeaders] = $this->curlRequest($httpVerb, $url, $headers, $body, $isStream);
 
         $shouldThrow404 = $throwOn404 && ($status === 404);
         if ($shouldThrow404 || $status < 200 || ($status >= 400 && $status !== 404)) {
@@ -130,10 +144,11 @@ class SimpleS3
 
     /**
      * @param Array<string, string> $headers
+     * @param string|resource $body
      * @return Response
      * @throws RuntimeException If the request failed.
      */
-    private function curlRequest(string $httpVerb, string $url, array $headers, string $body): array
+    private function curlRequest(string $httpVerb, string $url, array $headers, $body, bool $isStream = false): array
     {
         $curlHeaders = [];
         foreach ($headers as $name => $value) {
@@ -146,12 +161,11 @@ class SimpleS3
         }
 
         $responseHeadersAsString = '';
-        curl_setopt_array($ch, [
+        $curlOptions = [
             CURLOPT_CUSTOMREQUEST => $httpVerb,
             CURLOPT_HTTPHEADER => $curlHeaders,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_TIMEOUT => $this->timeoutInSeconds,
-            CURLOPT_POSTFIELDS => $body,
             // So that `curl_exec` returns the response body
             CURLOPT_RETURNTRANSFER => true,
             // Retrieve the response headers
@@ -159,7 +173,19 @@ class SimpleS3
                 $responseHeadersAsString .= $data;
                 return strlen($data);
             },
-        ]);
+        ];
+
+        if ($isStream) {
+            $curlOptions[CURLOPT_UPLOAD] = true;
+            $curlOptions[CURLOPT_INFILE] = $body;
+            if (isset($headers['content-length'])) {
+                $curlOptions[CURLOPT_INFILESIZE] = (int) $headers['content-length'];
+            }
+        } else {
+            $curlOptions[CURLOPT_POSTFIELDS] = $body;
+        }
+
+        curl_setopt_array($ch, $curlOptions);
         $responseBody = curl_exec($ch);
         $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
@@ -187,12 +213,12 @@ class SimpleS3
         string $uriPath,
         string $queryString,
         array $headers,
-        string $body
+        string $bodyHash
     ): array {
         $dateAsText = gmdate('Ymd');
         $timeAsText = gmdate('Ymd\THis\Z');
         $scope = "$dateAsText/{$this->region}/s3/aws4_request";
-        $bodySignature = hash('sha256', $body);
+        $bodySignature = $bodyHash;
 
         $headers['x-amz-date'] = $timeAsText;
         $headers['x-amz-content-sha256'] = $bodySignature;
