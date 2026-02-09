@@ -53,6 +53,60 @@ class SimpleS3
     }
 
     /**
+     * Convenience helper to return only the response body.
+     *
+     * @param Array<string, string> $headers
+     * @throws RuntimeException If the request failed.
+     */
+    public function getBody(string $bucket, string $key, array $headers = []): string
+    {
+        [, $body] = $this->get($bucket, $key, $headers);
+        return $body;
+    }
+
+    /**
+     * Stream the object into a temporary stream for direct output (e.g., fpassthru).
+     * Caller is responsible for closing the returned stream.
+     *
+     * @param Array<string, string> $headers
+     * @return array{int, resource, array<string, string>}
+     * @throws RuntimeException If the request failed.
+     */
+    public function getStream(string $bucket, string $key, array $headers = []): array
+    {
+        $fp = fopen('php://temp', 'w+');
+        if (! $fp) {
+            throw new RuntimeException('Could not open temporary stream');
+        }
+
+        [$status, , $responseHeaders] = $this->s3Request('GET', $bucket, $key, $headers, '', true, $fp);
+        rewind($fp);
+
+        return [$status, $fp, $responseHeaders];
+    }
+
+    /**
+     * Stream the object directly to a file to avoid loading into memory.
+     *
+     * @param Array<string, string> $headers
+     * @return Response
+     * @throws RuntimeException If the request failed.
+     */
+    public function getToFile(string $bucket, string $key, string $destPath, array $headers = []): array
+    {
+        $fp = fopen($destPath, 'wb');
+        if (! $fp) {
+            throw new RuntimeException('Could not open destination file for writing');
+        }
+
+        try {
+            return $this->s3Request('GET', $bucket, $key, $headers, '', true, $fp);
+        } finally {
+            fclose($fp);
+        }
+    }
+
+    /**
      * `get()` will throw if the object doesn't exist.
      * This method will return a 404 status and not throw instead.
      *
@@ -94,7 +148,7 @@ class SimpleS3
      * @return Response
      * @throws RuntimeException If the request failed.
      */
-    private function s3Request(string $httpVerb, string $bucket, string $key, array $headers, $body = '', bool $throwOn404 = true): array
+    private function s3Request(string $httpVerb, string $bucket, string $key, array $headers, $body = '', bool $throwOn404 = true, $responseBodyStream = null): array
     {
         $uriPath = str_replace('%2F', '/', rawurlencode($key));
         $uriPath = '/' . ltrim($uriPath, '/');
@@ -122,7 +176,7 @@ class SimpleS3
         }
         $url = "$url{$uriPath}?$queryString";
 
-        [$status, $body, $responseHeaders] = $this->curlRequest($httpVerb, $url, $headers, $body, $isStream);
+        [$status, $body, $responseHeaders] = $this->curlRequest($httpVerb, $url, $headers, $body, $isStream, $responseBodyStream);
 
         $shouldThrow404 = $throwOn404 && ($status === 404);
         if ($shouldThrow404 || $status < 200 || ($status >= 400 && $status !== 404)) {
@@ -148,7 +202,7 @@ class SimpleS3
      * @return Response
      * @throws RuntimeException If the request failed.
      */
-    private function curlRequest(string $httpVerb, string $url, array $headers, $body, bool $isStream = false): array
+    private function curlRequest(string $httpVerb, string $url, array $headers, $body, bool $isStream = false, $responseBodyStream = null): array
     {
         $curlHeaders = [];
         foreach ($headers as $name => $value) {
@@ -166,14 +220,20 @@ class SimpleS3
             CURLOPT_HTTPHEADER => $curlHeaders,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_TIMEOUT => $this->timeoutInSeconds,
-            // So that `curl_exec` returns the response body
-            CURLOPT_RETURNTRANSFER => true,
             // Retrieve the response headers
             CURLOPT_HEADERFUNCTION => function ($c, $data) use (&$responseHeadersAsString) {
                 $responseHeadersAsString .= $data;
                 return strlen($data);
             },
         ];
+
+        if ($responseBodyStream) {
+            $curlOptions[CURLOPT_FILE] = $responseBodyStream;
+            $curlOptions[CURLOPT_RETURNTRANSFER] = false;
+        } else {
+            // So that `curl_exec` returns the response body
+            $curlOptions[CURLOPT_RETURNTRANSFER] = true;
+        }
 
         if ($isStream) {
             $curlOptions[CURLOPT_UPLOAD] = true;
@@ -200,6 +260,10 @@ class SimpleS3
             ICONV_MIME_DECODE_CONTINUE_ON_ERROR,
             'UTF-8',
         ) ?: [];
+
+        if ($responseBodyStream) {
+            return [$status, '', $responseHeaders];
+        }
 
         return [$status, (string) $responseBody, $responseHeaders];
     }
