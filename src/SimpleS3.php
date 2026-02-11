@@ -153,8 +153,17 @@ class SimpleS3
         $uriPath = str_replace('%2F', '/', rawurlencode($key));
         $uriPath = '/' . ltrim($uriPath, '/');
         $queryString = '';
-        $hostname = $this->getHostname($bucket);
-        $headers['host'] = $hostname;
+
+        if ($this->endpoint) {
+            $endpointHost = $this->getEndpointHost($this->endpoint);
+            $hostname = $endpointHost ?: $this->getHostname($bucket);
+            $headers['host'] = $hostname;
+            // Path-style for custom endpoints (e.g. R2): /bucket/key
+            $uriPath = '/' . ltrim($bucket . $uriPath, '/');
+        } else {
+            $hostname = $this->getHostname($bucket);
+            $headers['host'] = $hostname;
+        }
 
         $isStream = \is_resource($body);
         $bodyHash = $isStream ? 'UNSIGNED-PAYLOAD' : hash('sha256', $body);
@@ -333,6 +342,16 @@ class SimpleS3
         if ($this->region === 'us-east-1') return "$bucketName.s3.amazonaws.com";
 
         return "$bucketName.s3-{$this->region}.amazonaws.com";
+    }
+
+    private function getEndpointHost(string $endpoint): ?string
+    {
+        $parts = parse_url($endpoint);
+        if ($parts === false) {
+            return null;
+        }
+
+        return $parts['host'] ?? null;
     }
 
     private function httpError(?int $status, ?string $message): RuntimeException
