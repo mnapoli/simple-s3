@@ -73,3 +73,48 @@ if ($status === 304) {
     $newEtag = $responseHeaders['ETag'];
 }
 ```
+
+### Body/Stream Helpers
+
+`getBody()` and `getStream()` were added for convenience when fetching objects.
+
+**Get a file’s contents as a string:**
+
+```php
+$contents = $s3->getBody($bucket, 'path/to/file.jpg');
+// $contents is the raw object body (string).
+```
+
+**Stream a file directly to output:**
+
+```php
+[$status, $stream, $headers] = $s3->getStream($bucket, 'path/to/video.mp4');
+
+header('Content-Type: ' . ($headers['Content-Type'] ?? 'application/octet-stream'));
+header('Content-Length: ' . ($headers['Content-Length'] ?? ''));
+fpassthru($stream);
+fclose($stream); // important to close the file the function opened
+```
+
+**Upload from a resource (stream):**
+
+```php
+$fp = fopen('/path/to/local/file.mp4', 'rb');
+
+$headers = [
+    'Content-Type' => 'video/mp4',
+    // Optional but recommended if size is known:
+    'content-length' => (string) filesize('/path/to/local/file.mp4'),
+];
+
+$s3->put($bucket, 'uploads/file.mp4', $fp, $headers);
+fclose($fp); // close the file you opened
+```
+
+**Upload from a string:**
+
+```php
+$s3->put($bucket, 'uploads/hello.txt', 'Hello world', [
+    'Content-Type' => 'text/plain',
+]);
+```
