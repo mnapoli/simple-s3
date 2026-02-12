@@ -150,6 +150,7 @@ class SimpleS3
      */
     private function s3Request(string $httpVerb, string $bucket, string $key, array $headers, $body = '', bool $throwOn404 = true, $responseBodyStream = null): array
     {
+        $headers = array_change_key_case($headers, CASE_LOWER);
         $uriPath = str_replace('%2F', '/', rawurlencode($key));
         $uriPath = '/' . ltrim($uriPath, '/');
         $queryString = '';
