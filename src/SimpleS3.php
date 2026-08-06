@@ -260,7 +260,6 @@ class SimpleS3
         curl_setopt_array($ch, $curlOptions);
         $responseBody = curl_exec($ch);
         $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
 
         $success = $status !== 0 && $status !== 100 && $status !== 500 && $status !== 502 && $status !== 503;
         if ($responseBody === false || ! $success || curl_errno($ch) > 0) {
